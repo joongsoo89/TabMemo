@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TabMemo</string>
+    <color name="paper">#F3EAD9</color>
+    <color name="teal">#2C5F6E</color>
+    <style name="Theme.TabMemo" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/teal</item>
+        <item name="android:navigationBarColor">@color/paper</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/paper</item>
+    </style>
+</resources>
