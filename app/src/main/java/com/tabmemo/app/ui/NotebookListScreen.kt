@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tabmemo.app.data.Notebook
 import com.tabmemo.app.data.matches
+import com.tabmemo.app.data.normalizedLabels
 import com.tabmemo.app.data.snippet
 import com.tabmemo.app.ui.theme.Cream
 import com.tabmemo.app.ui.theme.Ink
@@ -56,10 +58,13 @@ fun NotebookListScreen(
     onLang: (Lang) -> Unit,
     onOpen: (String) -> Unit,
     onAdd: () -> Unit,
+    onImport: () -> Unit,
 ) {
     val t = stringsForLang(lang)
     var query by rememberSaveable { mutableStateOf("") }
-    val filtered = notebooks.filter { it.matches(query) }
+    var selectedLabel by rememberSaveable { mutableStateOf<String?>(null) }
+    val allLabels = notebooks.flatMap { it.normalizedLabels() }.distinct()
+    val filtered = notebooks.filter { it.matches(query, selectedLabel) }
 
     Scaffold(
         containerColor = Paper,
@@ -96,9 +101,18 @@ fun NotebookListScreen(
                     unfocusedBorderColor = Line,
                 ),
             )
-            Spacer(Modifier.height(12.dp))
+            if (allLabels.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                LabelRow(
+                    labels = allLabels,
+                    selected = selectedLabel,
+                    allLabel = t.allLabels,
+                    onSelect = { selectedLabel = it },
+                )
+            }
+            TextButton(onClick = onImport) { Text(t.importFile, color = Teal) }
             if (notebooks.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
                             Modifier
@@ -112,14 +126,17 @@ fun NotebookListScreen(
                         Text(t.emptyHint, color = Muted)
                     }
                 }
+                MadeByFooter(t.madeBy)
             } else {
                 LazyColumn(
+                    modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(filtered, key = { it.id }) { notebook ->
                         NotebookCard(lang, notebook, onClick = { onOpen(notebook.id) })
                     }
+                    item { MadeByFooter(t.madeBy) }
                 }
             }
         }
@@ -130,6 +147,7 @@ fun NotebookListScreen(
 private fun NotebookCard(lang: Lang, notebook: Notebook, onClick: () -> Unit) {
     val t = stringsForLang(lang)
     val snippet = notebook.snippet()
+    val labels = notebook.normalizedLabels()
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,6 +176,9 @@ private fun NotebookCard(lang: Lang, notebook: Notebook, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(t.tabCount(notebook.tabs.size), color = Muted, fontSize = 13.sp)
+                if (labels.isNotEmpty()) {
+                    Text(labels.joinToString(" · "), color = Teal, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
                 if (snippet.isNotEmpty()) {
                     Text(snippet, color = Muted, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }

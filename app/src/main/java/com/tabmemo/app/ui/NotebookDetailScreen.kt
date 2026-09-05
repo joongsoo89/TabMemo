@@ -26,7 +26,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,10 +33,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tabmemo.app.data.ImageStore
 import com.tabmemo.app.data.MAIN_TAB_ID
 import com.tabmemo.app.data.Notebook
-import com.tabmemo.app.data.addTab
 import com.tabmemo.app.data.hasTab
+import com.tabmemo.app.data.imagesOf
+import com.tabmemo.app.data.normalizedLabels
 import com.tabmemo.app.data.tabText
 import com.tabmemo.app.data.tabTitle
 import com.tabmemo.app.ui.theme.Cream
@@ -52,19 +53,22 @@ import com.tabmemo.app.ui.theme.Warm
 fun NotebookDetailScreen(
     lang: Lang,
     notebook: Notebook,
+    imageStore: ImageStore,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
     onLang: (Lang) -> Unit,
-    onUpdate: (Notebook) -> Unit,
 ) {
     val t = stringsForLang(lang)
     var tabId by rememberSaveable { mutableStateOf(MAIN_TAB_ID) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
-    var showAddTab by remember { mutableStateOf(false) }
     val selected = if (notebook.hasTab(tabId)) tabId else MAIN_TAB_ID
     val heading = if (selected == MAIN_TAB_ID) t.mainMemo else notebook.tabTitle(selected).ifBlank { t.newTabTitle }
     val body = notebook.tabText(selected).ifBlank { t.noContent }
+    val photos = notebook.imagesOf(selected)
+    val labels = notebook.normalizedLabels()
 
     Scaffold(
         containerColor = Paper,
@@ -105,13 +109,22 @@ fun NotebookDetailScreen(
                             Text(t.tabCount(notebook.tabs.size), color = Muted)
                         }
                     }
+                    if (labels.isNotEmpty()) {
+                        LabelRow(
+                            labels = labels,
+                            selected = null,
+                            allLabel = t.allLabels,
+                            onSelect = {},
+                            filterable = false,
+                        )
+                    }
                     MemoTabBar(
                         lang = lang,
                         selectedId = selected,
                         tabs = notebook.tabs,
-                        showAdd = true,
+                        showAdd = false,
                         onSelect = { tabId = it },
-                        onAdd = { showAddTab = true },
+                        onAdd = {},
                     )
                 }
             }
@@ -129,28 +142,32 @@ fun NotebookDetailScreen(
                     lineHeight = 26.sp,
                 )
             }
+            if (photos.isNotEmpty()) {
+                Text(t.photos, color = Ink)
+                PhotoStrip(
+                    notebookId = notebook.id,
+                    imageIds = photos,
+                    imageStore = imageStore,
+                    editable = false,
+                    addLabel = t.addPhoto,
+                    onAdd = {},
+                    onRemove = {},
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onEdit, colors = ButtonDefaults.buttonColors(containerColor = Teal)) {
                     Text(t.edit)
                 }
+                TextButton(onClick = onExport) { Text(t.exportFile, color = Teal) }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onImport) { Text(t.importIntoMemo, color = Teal) }
                 TextButton(onClick = { confirmDelete = true }) { Text(t.delete, color = Warm) }
             }
-            Box(Modifier.padding(bottom = 24.dp))
+            MadeByFooter(t.madeBy)
         }
     }
 
-    if (showAddTab) {
-        AddTabDialog(
-            lang = lang,
-            onConfirm = { title ->
-                val (next, tab) = notebook.addTab(title)
-                onUpdate(next)
-                tabId = tab.id
-                showAddTab = false
-            },
-            onDismiss = { showAddTab = false },
-        )
-    }
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },

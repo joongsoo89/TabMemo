@@ -1,5 +1,9 @@
 package com.tabmemo.app.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,11 +33,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
+import com.tabmemo.app.data.ImageStore
 import com.tabmemo.app.data.MAIN_TAB_ID
 import com.tabmemo.app.data.Notebook
+import com.tabmemo.app.data.addImage
+import com.tabmemo.app.data.addLabel
 import com.tabmemo.app.data.addTab
 import com.tabmemo.app.data.hasTab
+import com.tabmemo.app.data.imagesOf
+import com.tabmemo.app.data.normalizedLabels
 import com.tabmemo.app.data.randomEmoji
+import com.tabmemo.app.data.removeImage
+import com.tabmemo.app.data.removeLabel
 import com.tabmemo.app.data.removeTab
 import com.tabmemo.app.data.tabText
 import com.tabmemo.app.data.tabTitle
@@ -52,6 +63,7 @@ import com.tabmemo.app.ui.theme.Warm
 fun NotebookEditScreen(
     lang: Lang,
     initial: Notebook,
+    imageStore: ImageStore,
     onSave: (Notebook) -> Unit,
     onCancel: () -> Unit,
     onLang: (Lang) -> Unit,
@@ -64,10 +76,22 @@ fun NotebookEditScreen(
     var bodyFocused by remember { mutableStateOf(false) }
     var showAddTab by remember { mutableStateOf(false) }
     var confirmDeleteTab by remember { mutableStateOf(false) }
+    var labelDraft by rememberSaveable { mutableStateOf("") }
     val selected = if (notebook.hasTab(tabId)) tabId else MAIN_TAB_ID
     val isCustom = selected != MAIN_TAB_ID
     val heading = if (isCustom) notebook.tabTitle(selected) else t.mainMemo
     val placeholder = if (isCustom) t.tabPlaceholder else t.mainPlaceholder
+
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(8),
+    ) { uris: List<Uri> ->
+        var next = notebook
+        uris.forEach { uri ->
+            val id = imageStore.saveFromUri(next.id, uri) ?: return@forEach
+            next = next.addImage(selected, id)
+        }
+        notebook = next
+    }
 
     Scaffold(
         containerColor = Paper,
@@ -115,6 +139,33 @@ fun NotebookEditScreen(
                         onChange = { notebook = notebook.copy(title = it) },
                     )
                 }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Field(
+                        label = t.labels,
+                        value = labelDraft,
+                        hint = t.labelsHint,
+                        modifier = Modifier.weight(1f),
+                        onChange = { labelDraft = it },
+                    )
+                    TextButton(
+                        onClick = {
+                            notebook = notebook.addLabel(labelDraft)
+                            labelDraft = ""
+                        },
+                    ) { Text(t.addLabel, color = Teal) }
+                }
+                LabelRow(
+                    labels = notebook.normalizedLabels(),
+                    selected = null,
+                    allLabel = t.allLabels,
+                    onSelect = {},
+                    removable = true,
+                    filterable = false,
+                    onRemove = { notebook = notebook.removeLabel(it) },
+                )
             }
 
             MemoTabBar(
@@ -157,6 +208,22 @@ fun NotebookEditScreen(
                 placeholder = { Text(placeholder) },
                 shape = RoundedCornerShape(16.dp),
                 colors = fieldColors(),
+            )
+            PhotoStrip(
+                notebookId = notebook.id,
+                imageIds = notebook.imagesOf(selected),
+                imageStore = imageStore,
+                editable = true,
+                addLabel = t.addPhoto,
+                onAdd = {
+                    photoPicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                    )
+                },
+                onRemove = { id ->
+                    imageStore.delete(notebook.id, id)
+                    notebook = notebook.removeImage(selected, id)
+                },
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
