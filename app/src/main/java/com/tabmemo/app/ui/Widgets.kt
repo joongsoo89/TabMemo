@@ -50,9 +50,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -61,6 +68,7 @@ import com.tabmemo.app.data.ImageStore
 import com.tabmemo.app.data.MAIN_TAB_ID
 import com.tabmemo.app.data.TabMemo
 import com.tabmemo.app.ui.theme.Cream
+import com.tabmemo.app.ui.theme.Ink
 import com.tabmemo.app.ui.theme.Muted
 import com.tabmemo.app.ui.theme.Teal
 import com.tabmemo.app.ui.theme.Warm
@@ -275,17 +283,23 @@ fun PhotoStrip(
         if (editable) {
             Box(
                 modifier = Modifier
-                    .size(96.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFFE4ECE7))
+                    .size(40.dp)
                     .clickable(onClick = onAdd),
                 contentAlignment = Alignment.Center,
             ) {
-                AddPhotoIcon(
-                    modifier = Modifier.size(36.dp),
-                    tint = Teal,
-                    contentDescription = addLabel,
-                )
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFFE4ECE7)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AddPhotoIcon(
+                        modifier = Modifier.size(14.dp),
+                        tint = Teal,
+                        contentDescription = addLabel,
+                    )
+                }
             }
         }
     }
@@ -420,6 +434,69 @@ fun MemoPhoto(file: File, modifier: Modifier = Modifier, crop: Boolean = true) {
             contentScale = if (crop) ContentScale.Crop else ContentScale.Fit,
         )
     }
+}
+
+private val URL_REGEX = Regex(
+    """(?i)\b((?:https?://|www\.)[^\s<>"'）)」】\]]+)""",
+)
+
+fun linkifyText(text: String): androidx.compose.ui.text.AnnotatedString {
+    return buildAnnotatedString {
+        var last = 0
+        URL_REGEX.findAll(text).forEach { match ->
+            val raw = match.value.trimEnd('.', ',', ';', ':', '!', '?', ')', ']', '}', '>', '。', '、')
+            val startIndex = match.range.first
+            val endIndex = startIndex + raw.length
+            if (startIndex > last) append(text.substring(last, startIndex))
+            val url = if (raw.startsWith("http", ignoreCase = true)) raw else "https://$raw"
+            withLink(LinkAnnotation.Url(url)) {
+                withStyle(SpanStyle(color = Teal, textDecoration = TextDecoration.Underline)) {
+                    append(raw)
+                }
+            }
+            last = endIndex
+        }
+        if (last < text.length) append(text.substring(last))
+    }
+}
+
+@Composable
+fun SelectableLinkText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = Ink,
+    fontSize: androidx.compose.ui.unit.TextUnit = 16.sp,
+    lineHeight: androidx.compose.ui.unit.TextUnit = 26.sp,
+) {
+    SelectionContainer {
+        Text(
+            text = remember(text) { linkifyText(text) },
+            modifier = modifier,
+            color = color,
+            fontSize = fontSize,
+            lineHeight = lineHeight,
+        )
+    }
+}
+
+fun shareMemoText(context: android.content.Context, title: String, heading: String, body: String, chooserTitle: String) {
+    val payload = buildString {
+        append(title.trim())
+        if (heading.isNotBlank() && heading != title) {
+            append('\n')
+            append(heading.trim())
+        }
+        if (body.isNotBlank()) {
+            append("\n\n")
+            append(body.trim())
+        }
+    }.ifBlank { title }
+    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(android.content.Intent.EXTRA_SUBJECT, title)
+        putExtra(android.content.Intent.EXTRA_TEXT, payload)
+    }
+    context.startActivity(android.content.Intent.createChooser(intent, chooserTitle))
 }
 
 @Composable

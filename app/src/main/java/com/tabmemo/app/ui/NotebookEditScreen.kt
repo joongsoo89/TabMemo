@@ -63,8 +63,9 @@ import com.tabmemo.app.ui.theme.Warm
 fun NotebookEditScreen(
     lang: Lang,
     initial: Notebook,
+    initialTabId: String = MAIN_TAB_ID,
     imageStore: ImageStore,
-    onSave: (Notebook) -> Unit,
+    onSave: (Notebook, String) -> Unit,
     onCancel: () -> Unit,
     onLang: (Lang) -> Unit,
     onNeedTitle: () -> Unit,
@@ -72,7 +73,7 @@ fun NotebookEditScreen(
 ) {
     val t = stringsForLang(lang)
     var notebook by remember(initial.id) { mutableStateOf(initial) }
-    var tabId by rememberSaveable { mutableStateOf(MAIN_TAB_ID) }
+    var tabId by rememberSaveable { mutableStateOf(initialTabId) }
     var bodyFocused by remember { mutableStateOf(false) }
     var showAddTab by remember { mutableStateOf(false) }
     var confirmDeleteTab by remember { mutableStateOf(false) }
@@ -234,7 +235,7 @@ fun NotebookEditScreen(
                         when {
                             notebook.title.isBlank() -> onNeedTitle()
                             notebook.tabs.any { it.title.isBlank() } -> onNeedTabTitle()
-                            else -> onSave(notebook.copy(updatedAt = System.currentTimeMillis()))
+                            else -> onSave(notebook.copy(updatedAt = System.currentTimeMillis()), selected)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Teal),

@@ -58,6 +58,9 @@ data class Copy(
     val importOk: String,
     val importFail: String,
     val exportOk: String,
+    val copy: String,
+    val copied: String,
+    val share: String,
     val madeBy: String,
 )
 
@@ -103,6 +106,9 @@ fun stringsForLang(lang: Lang): Copy = when (lang) {
         importOk = "파일을 가져왔습니다.",
         importFail = "파일을 읽지 못했습니다.",
         exportOk = "파일로 저장했습니다.",
+        copy = "복사",
+        copied = "복사했습니다.",
+        share = "공유",
         madeBy = "Made by Tokyoromance",
     )
     Lang.Ja -> Copy(
@@ -146,6 +152,9 @@ fun stringsForLang(lang: Lang): Copy = when (lang) {
         importOk = "ファイルを読み込みました。",
         importFail = "ファイルを読めませんでした。",
         exportOk = "ファイルに保存しました。",
+        copy = "コピー",
+        copied = "コピーしました。",
+        share = "共有",
         madeBy = "Made by Tokyoromance",
     )
     Lang.En -> Copy(
@@ -189,6 +198,9 @@ fun stringsForLang(lang: Lang): Copy = when (lang) {
         importOk = "File imported.",
         importFail = "Could not read the file.",
         exportOk = "Saved as a file.",
+        copy = "Copy",
+        copied = "Copied.",
+        share = "Share",
         madeBy = "Made by Tokyoromance",
     )
 }

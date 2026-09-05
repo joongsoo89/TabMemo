@@ -1,5 +1,7 @@
 package com.tabmemo.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -28,6 +30,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.tabmemo.app.data.MAIN_TAB_ID
 import com.tabmemo.app.data.Notebook
 import com.tabmemo.app.data.fileName
 import com.tabmemo.app.ui.NotebookDetailScreen
@@ -103,7 +106,7 @@ private fun TabMemoApp(
         val imported = viewModel.importText(text, importTargetId)
         importTargetId = null
         if (imported != null) {
-            nav.navigate("detail/${imported.id}")
+            nav.navigate("detail/${imported.id}/$MAIN_TAB_ID")
         }
     }
 
@@ -124,7 +127,7 @@ private fun TabMemoApp(
         if (text == null) {
             viewModel.notify("import-fail")
         } else {
-            viewModel.importText(text)?.let { nav.navigate("detail/${it.id}") }
+            viewModel.importText(text)?.let { nav.navigate("detail/${it.id}/$MAIN_TAB_ID") }
         }
     }
 
@@ -134,6 +137,7 @@ private fun TabMemoApp(
             "empty-title" -> t.needTitle
             "empty-tab" -> t.needTabTitle
             "saved" -> t.saved
+            "copied" -> t.copied
             "import-fail" -> t.importFail
             "import-ok" -> t.importOk
             "export-ok" -> t.exportOk
@@ -157,16 +161,20 @@ private fun TabMemoApp(
                     lang = lang,
                     notebooks = notebooks,
                     onLang = viewModel::setLang,
-                    onOpen = { nav.navigate("detail/$it") },
+                    onOpen = { nav.navigate("detail/$it/$MAIN_TAB_ID") },
                     onAdd = { nav.navigate("new") },
                     onImport = { startImport(null) },
                 )
             }
             composable(
-                "detail/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+                "detail/{id}/{tabId}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.StringType },
+                    navArgument("tabId") { type = NavType.StringType },
+                ),
             ) { entry ->
                 val id = entry.arguments?.getString("id")
+                val tabId = entry.arguments?.getString("tabId") ?: MAIN_TAB_ID
                 val notebook = viewModel.notebook(id)
                 if (notebook == null) {
                     LaunchedEffect(id) { nav.popBackStack() }
@@ -174,9 +182,15 @@ private fun TabMemoApp(
                     NotebookDetailScreen(
                         lang = lang,
                         notebook = notebook,
+                        initialTabId = tabId,
                         imageStore = viewModel.images,
                         onBack = { nav.popBackStack() },
-                        onEdit = { nav.navigate("edit/${notebook.id}") },
+                        onEdit = { tabId -> nav.navigate("edit/${notebook.id}/$tabId") },
+                        onCopy = { text ->
+                            val clipboard = context.getSystemService(ClipboardManager::class.java)
+                            clipboard.setPrimaryClip(ClipData.newPlainText("TabMemo", text))
+                            viewModel.notify("copied")
+                        },
                         onDelete = {
                             viewModel.delete(notebook.id)
                             nav.popBackStack()
@@ -192,10 +206,10 @@ private fun TabMemoApp(
                     lang = lang,
                     initial = remember { Notebook() },
                     imageStore = viewModel.images,
-                    onSave = { notebook ->
+                    onSave = { notebook, tabId ->
                         viewModel.upsert(notebook)
                         viewModel.notify("saved")
-                        nav.navigate("detail/${notebook.id}") {
+                        nav.navigate("detail/${notebook.id}/$tabId") {
                             popUpTo("list")
                         }
                     },
@@ -206,10 +220,14 @@ private fun TabMemoApp(
                 )
             }
             composable(
-                "edit/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+                "edit/{id}/{tabId}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.StringType },
+                    navArgument("tabId") { type = NavType.StringType },
+                ),
             ) { entry ->
                 val id = entry.arguments?.getString("id")
+                val tabId = entry.arguments?.getString("tabId") ?: MAIN_TAB_ID
                 val notebook = viewModel.notebook(id)
                 if (notebook == null) {
                     LaunchedEffect(id) { nav.popBackStack() }
@@ -217,11 +235,14 @@ private fun TabMemoApp(
                     NotebookEditScreen(
                         lang = lang,
                         initial = notebook,
+                        initialTabId = tabId,
                         imageStore = viewModel.images,
-                        onSave = { updated ->
+                        onSave = { updated, tabId ->
                             viewModel.upsert(updated)
                             viewModel.notify("saved")
-                            nav.popBackStack()
+                            nav.navigate("detail/${updated.id}/$tabId") {
+                                popUpTo("list")
+                            }
                         },
                         onCancel = { nav.popBackStack() },
                         onLang = viewModel::setLang,
