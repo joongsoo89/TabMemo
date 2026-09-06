@@ -46,6 +46,7 @@ import com.tabmemo.app.data.tabTitle
 import com.tabmemo.app.ui.theme.Cream
 import com.tabmemo.app.ui.theme.Ink
 import com.tabmemo.app.ui.theme.Muted
+import com.tabmemo.app.ui.theme.OnTeal
 import com.tabmemo.app.ui.theme.Paper
 import com.tabmemo.app.ui.theme.Teal
 import com.tabmemo.app.ui.theme.Warm
@@ -169,9 +170,12 @@ fun NotebookDetailScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = { onEdit(selected) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Teal),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Teal,
+                            contentColor = OnTeal,
+                        ),
                     ) {
-                        Text(t.edit)
+                        Text(t.edit, color = OnTeal)
                     }
                     TextButton(
                         onClick = {

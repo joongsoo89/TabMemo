@@ -70,6 +70,7 @@ import com.tabmemo.app.data.TabMemo
 import com.tabmemo.app.ui.theme.Cream
 import com.tabmemo.app.ui.theme.Ink
 import com.tabmemo.app.ui.theme.Muted
+import com.tabmemo.app.ui.theme.OnTeal
 import com.tabmemo.app.ui.theme.Teal
 import com.tabmemo.app.ui.theme.Warm
 import java.io.File
@@ -151,12 +152,12 @@ private fun TabChip(label: String, selected: Boolean, onClick: () -> Unit) {
             .widthIn(min = 48.dp),
         contentPadding = PaddingValues(horizontal = 12.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (selected) Cream else Color.Transparent,
-            contentColor = if (selected) Teal else Muted,
+            containerColor = if (selected) Teal else Color.Transparent,
+            contentColor = if (selected) OnTeal else Muted,
         ),
         elevation = ButtonDefaults.buttonElevation(0.dp),
     ) {
-        Text(label, fontSize = 13.sp, maxLines = 1)
+        Text(label, fontSize = 13.sp, maxLines = 1, color = if (selected) OnTeal else Muted)
     }
 }
 
@@ -210,23 +211,25 @@ fun LabelRow(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         if (filterable && !removable) {
+            val allSelected = selected == null
             FilterChip(
-                selected = selected == null,
+                selected = allSelected,
                 onClick = { onSelect(null) },
-                label = { Text(allLabel) },
+                label = { Text(allLabel, color = if (allSelected) OnTeal else Teal) },
                 colors = labelChipColors(),
             )
         }
         labels.forEach { label ->
+            val isSelected = selected?.equals(label, ignoreCase = true) == true
             FilterChip(
-                selected = selected?.equals(label, ignoreCase = true) == true,
+                selected = isSelected,
                 onClick = {
                     when {
                         removable -> onRemove(label)
                         filterable -> onSelect(if (selected == label) null else label)
                     }
                 },
-                label = { Text(if (removable) "$label ×" else label) },
+                label = { Text(if (removable) "$label ×" else label, color = if (isSelected) OnTeal else Teal) },
                 colors = labelChipColors(),
             )
         }
@@ -238,7 +241,7 @@ private fun labelChipColors() = FilterChipDefaults.filterChipColors(
     containerColor = Color(0xFFE4ECE7),
     selectedContainerColor = Teal,
     labelColor = Teal,
-    selectedLabelColor = Cream,
+    selectedLabelColor = OnTeal,
 )
 
 @Composable

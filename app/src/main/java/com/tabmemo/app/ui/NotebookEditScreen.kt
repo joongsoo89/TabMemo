@@ -54,6 +54,7 @@ import com.tabmemo.app.ui.theme.Cream
 import com.tabmemo.app.ui.theme.Ink
 import com.tabmemo.app.ui.theme.Line
 import com.tabmemo.app.ui.theme.Muted
+import com.tabmemo.app.ui.theme.OnTeal
 import com.tabmemo.app.ui.theme.Paper
 import com.tabmemo.app.ui.theme.Teal
 import com.tabmemo.app.ui.theme.Warm
@@ -238,8 +239,11 @@ fun NotebookEditScreen(
                             else -> onSave(notebook.copy(updatedAt = System.currentTimeMillis()), selected)
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Teal),
-                ) { Text(t.save) }
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Teal,
+                        contentColor = OnTeal,
+                    ),
+                ) { Text(t.save, color = OnTeal) }
                 TextButton(onClick = onCancel) { Text(t.cancel, color = Warm) }
             }
         }

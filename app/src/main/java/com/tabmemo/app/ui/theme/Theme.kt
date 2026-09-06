@@ -18,10 +18,11 @@ val Line = Color(0xFFDCE6DF)
 val Teal = Color(0xFF2C5F6E)
 val TealSoft = Color(0xFFD9EBE8)
 val Warm = Color(0xFFC45C26)
+val OnTeal = Color.White
 
 private val Colors = lightColorScheme(
     primary = Teal,
-    onPrimary = Cream,
+    onPrimary = OnTeal,
     secondary = Warm,
     onSecondary = Cream,
     background = Paper,
@@ -39,37 +40,31 @@ private val Type = Typography(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 26.sp,
-        color = Ink,
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
-        color = Ink,
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 18.sp,
-        color = Ink,
     ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontSize = 16.sp,
         lineHeight = 26.sp,
-        color = Ink,
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontSize = 14.sp,
         lineHeight = 22.sp,
-        color = Ink,
     ),
     labelLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
-        color = Ink,
     ),
 )
 

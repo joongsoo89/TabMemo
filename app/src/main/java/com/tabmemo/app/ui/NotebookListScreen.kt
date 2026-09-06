@@ -46,6 +46,7 @@ import com.tabmemo.app.ui.theme.Cream
 import com.tabmemo.app.ui.theme.Ink
 import com.tabmemo.app.ui.theme.Line
 import com.tabmemo.app.ui.theme.Muted
+import com.tabmemo.app.ui.theme.OnTeal
 import com.tabmemo.app.ui.theme.Paper
 import com.tabmemo.app.ui.theme.Teal
 import com.tabmemo.app.ui.theme.TealSoft
@@ -76,8 +77,8 @@ fun NotebookListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAdd, containerColor = Teal, contentColor = Cream) {
-                Text("+ ${t.add}", modifier = Modifier.padding(horizontal = 8.dp))
+            FloatingActionButton(onClick = onAdd, containerColor = Teal, contentColor = OnTeal) {
+                Text("+ ${t.add}", modifier = Modifier.padding(horizontal = 8.dp), color = OnTeal)
             }
         },
     ) { padding ->
