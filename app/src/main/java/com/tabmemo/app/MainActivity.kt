@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -177,7 +178,7 @@ private fun TabMemoApp(
                 val tabId = entry.arguments?.getString("tabId") ?: MAIN_TAB_ID
                 val notebook = viewModel.notebook(id)
                 if (notebook == null) {
-                    LaunchedEffect(id) { nav.popBackStack() }
+                    LaunchedEffect(id) { nav.goToList() }
                 } else {
                     NotebookDetailScreen(
                         lang = lang,
@@ -192,8 +193,8 @@ private fun TabMemoApp(
                             viewModel.notify("copied")
                         },
                         onDelete = {
+                            nav.goToList()
                             viewModel.delete(notebook.id)
-                            nav.popBackStack()
                         },
                         onExport = { startExport(notebook) },
                         onImport = { startImport(notebook.id) },
@@ -210,7 +211,8 @@ private fun TabMemoApp(
                         viewModel.upsert(notebook)
                         viewModel.notify("saved")
                         nav.navigate("detail/${notebook.id}/$tabId") {
-                            popUpTo("list")
+                            popUpTo("list") { inclusive = false }
+                            launchSingleTop = true
                         }
                     },
                     onCancel = { nav.popBackStack() },
@@ -230,7 +232,7 @@ private fun TabMemoApp(
                 val tabId = entry.arguments?.getString("tabId") ?: MAIN_TAB_ID
                 val notebook = viewModel.notebook(id)
                 if (notebook == null) {
-                    LaunchedEffect(id) { nav.popBackStack() }
+                    LaunchedEffect(id) { nav.goToList() }
                 } else {
                     NotebookEditScreen(
                         lang = lang,
@@ -241,7 +243,8 @@ private fun TabMemoApp(
                             viewModel.upsert(updated)
                             viewModel.notify("saved")
                             nav.navigate("detail/${updated.id}/$tabId") {
-                                popUpTo("list")
+                                popUpTo("list") { inclusive = false }
+                                launchSingleTop = true
                             }
                         },
                         onCancel = { nav.popBackStack() },
@@ -252,6 +255,13 @@ private fun TabMemoApp(
                 }
             }
         }
+    }
+}
+
+private fun NavController.goToList() {
+    navigate("list") {
+        launchSingleTop = true
+        popUpTo(graph.id) { inclusive = true }
     }
 }
 
