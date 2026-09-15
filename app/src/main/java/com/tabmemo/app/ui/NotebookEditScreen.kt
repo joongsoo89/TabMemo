@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,7 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.tabmemo.app.data.ImageStore
 import com.tabmemo.app.data.MAIN_TAB_ID
@@ -75,7 +78,6 @@ fun NotebookEditScreen(
     val t = stringsForLang(lang)
     var notebook by remember(initial.id) { mutableStateOf(initial) }
     var tabId by rememberSaveable { mutableStateOf(initialTabId) }
-    var bodyFocused by remember { mutableStateOf(false) }
     var showAddTab by remember { mutableStateOf(false) }
     var confirmDeleteTab by remember { mutableStateOf(false) }
     var labelDraft by rememberSaveable { mutableStateOf("") }
@@ -98,17 +100,22 @@ fun NotebookEditScreen(
     Scaffold(
         containerColor = Paper,
         topBar = {
-            if (!bodyFocused) {
-                TopAppBar(
-                    title = { Text(if (initial.title.isBlank()) t.add else t.edit) },
-                    navigationIcon = { TextButton(onClick = onCancel) { Text("←") } },
-                    actions = { LanguageBar(lang, onLang) },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Paper,
-                        titleContentColor = Ink,
-                    ),
-                )
-            }
+            TopAppBar(
+                title = {
+                    Text(
+                        if (initial.title.isBlank()) t.add else t.edit,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
+                navigationIcon = { TextButton(onClick = onCancel) { Text("←") } },
+                actions = { LanguageBar(lang, onLang) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Paper,
+                    titleContentColor = Ink,
+                ),
+            )
         },
     ) { padding ->
         Column(
@@ -116,12 +123,17 @@ fun NotebookEditScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .imePadding()
-                .padding(horizontal = 16.dp)
-                .padding(top = if (bodyFocused) 8.dp else 0.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (!bodyFocused) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -142,6 +154,7 @@ fun NotebookEditScreen(
                     )
                 }
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -157,7 +170,7 @@ fun NotebookEditScreen(
                             notebook = notebook.addLabel(labelDraft)
                             labelDraft = ""
                         },
-                    ) { Text(t.addLabel, color = Teal) }
+                    ) { Text(t.addLabel, color = Teal, maxLines = 1, softWrap = false) }
                 }
                 LabelRow(
                     labels = notebook.normalizedLabels(),
@@ -168,65 +181,66 @@ fun NotebookEditScreen(
                     filterable = false,
                     onRemove = { notebook = notebook.removeLabel(it) },
                 )
-            }
 
-            MemoTabBar(
-                lang = lang,
-                selectedId = selected,
-                tabs = notebook.tabs,
-                showAdd = true,
-                onSelect = { tabId = it },
-                onAdd = { showAddTab = true },
-            )
+                MemoTabBar(
+                    lang = lang,
+                    selectedId = selected,
+                    tabs = notebook.tabs,
+                    showAdd = true,
+                    onSelect = { tabId = it },
+                    onAdd = { showAddTab = true },
+                )
 
-            if (isCustom) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = heading,
-                        onValueChange = { notebook = notebook.withTabTitle(selected, it) },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        placeholder = { Text(t.newTabTitle) },
-                        colors = fieldColors(),
-                    )
-                    TextButton(onClick = { confirmDeleteTab = true }) {
-                        Text(t.deleteTab, color = Warm)
+                if (isCustom) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedTextField(
+                            value = heading,
+                            onValueChange = { notebook = notebook.withTabTitle(selected, it) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            placeholder = { Text(t.newTabTitle) },
+                            colors = fieldColors(),
+                        )
+                        TextButton(onClick = { confirmDeleteTab = true }) {
+                            Text(t.deleteTab, color = Warm, maxLines = 1, softWrap = false)
+                        }
                     }
+                } else {
+                    Text(t.mainMemo, color = Ink)
                 }
-            } else {
-                Text(t.mainMemo, color = Ink)
-            }
 
-            OutlinedTextField(
-                value = notebook.tabText(selected),
-                onValueChange = { notebook = notebook.withTabText(selected, it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .onFocusChanged { bodyFocused = it.isFocused },
-                placeholder = { Text(placeholder) },
-                shape = RoundedCornerShape(16.dp),
-                colors = fieldColors(),
-            )
-            PhotoStrip(
-                notebookId = notebook.id,
-                imageIds = notebook.imagesOf(selected),
-                imageStore = imageStore,
-                editable = true,
-                addLabel = t.addPhoto,
-                onAdd = {
-                    photoPicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                    )
-                },
-                onRemove = { id ->
-                    imageStore.delete(notebook.id, id)
-                    notebook = notebook.removeImage(selected, id)
-                },
-            )
+                OutlinedTextField(
+                    value = notebook.tabText(selected),
+                    onValueChange = { notebook = notebook.withTabText(selected, it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 200.dp),
+                    placeholder = { Text(placeholder) },
+                    minLines = 8,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = fieldColors(),
+                )
+                PhotoStrip(
+                    notebookId = notebook.id,
+                    imageIds = notebook.imagesOf(selected),
+                    imageStore = imageStore,
+                    editable = true,
+                    addLabel = t.addPhoto,
+                    onAdd = {
+                        photoPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                        )
+                    },
+                    onRemove = { id ->
+                        imageStore.delete(notebook.id, id)
+                        notebook = notebook.removeImage(selected, id)
+                    },
+                )
+            }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(bottom = 12.dp),
@@ -243,8 +257,8 @@ fun NotebookEditScreen(
                         containerColor = Teal,
                         contentColor = OnTeal,
                     ),
-                ) { Text(t.save, color = OnTeal) }
-                TextButton(onClick = onCancel) { Text(t.cancel, color = Warm) }
+                ) { Text(t.save, color = OnTeal, maxLines = 1, softWrap = false) }
+                TextButton(onClick = onCancel) { Text(t.cancel, color = Warm, maxLines = 1, softWrap = false) }
             }
         }
     }

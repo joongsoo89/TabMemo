@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tabmemo.app.data.ImageStore
@@ -170,12 +172,19 @@ fun NotebookDetailScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = { onEdit(selected) },
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Teal,
                             contentColor = OnTeal,
                         ),
                     ) {
-                        Text(t.edit, color = OnTeal)
+                        Text(
+                            t.edit,
+                            color = OnTeal,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Visible,
+                        )
                     }
                     TextButton(
                         onClick = {
@@ -187,9 +196,9 @@ fun NotebookDetailScreen(
                                 chooserTitle = t.share,
                             )
                         },
-                    ) { Text(t.share, color = Teal) }
+                    ) { Text(t.share, color = Teal, maxLines = 1, softWrap = false) }
                     TextButton(onClick = { onCopy(rawBody.ifBlank { "${notebook.title}\n$heading" }) }) {
-                        Text(t.copy, color = Teal)
+                        Text(t.copy, color = Teal, maxLines = 1, softWrap = false)
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
